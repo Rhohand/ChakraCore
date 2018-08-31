@@ -48,29 +48,38 @@ function Locate-MSBuild-Version([string]$version) {
     return "" # didn't find it so return empty string
 }
 
-function Locate-MSBuild() {
+function Locate-MSBuild(
+        $product = "Enterprise",
+        $versionMajor = "15",
+        # Skip 13
+        $versionDecrement = @(-1, -3)
+    ) {
     $msbuildExe = "msbuild.exe"
     if (Get-Command $msbuildExe -ErrorAction SilentlyContinue) { return $msbuildExe }
 
     $_ = WriteMessage "msbuild.exe not found on PATH, trying Dev15..."
 
-    $msbuildExe = Locate-MSBuild-Modern-Version -product "Enterprise" -version "15.0"
+    $msbuildExe = Locate-MSBuild-Modern-Version -product "$product" -version "$versionMajor.0"
     if ($msbuildExe -and (Test-Path $msbuildExe)) {
         $_ = WriteMessage "Found `"$msbuildExe`""
         return $msbuildExe
     }
 
-    $_ = WriteMessage "Dev15 not found, trying Dev14..."
+    $penuntimateVersionMajor = $versionMajor - $versionDecrement[0]
 
-    $msbuildExe = Locate-MSBuild-Version("14.0")
+    $_ = WriteMessage "Dev$versionMajor not found, trying Dev$penuntimateVersionMajor..."
+
+    $msbuildExe = Locate-MSBuild-Version("$penuntimateVersionMajor.0")
     if ($msbuildExe -and (Test-Path $msbuildExe)) {
         $_ = WriteMessage "Found `"$msbuildExe`""
         return $msbuildExe
     }
 
-    $_ = WriteMessage "Dev14 not found, trying Dev12..."
+    $previousPenuntimateVersionMajor = $versionMajor - $versionDecrement[1]
 
-    $msbuildExe = Locate-MSBuild-Version("12.0")
+    $_ = WriteMessage "Dev$penuntimateVersionMajor not found, trying Dev$previousPenuntimateVersionMajor..."
+
+    $msbuildExe = Locate-MSBuild-Version("$previousPenuntimateVersionMajor.0")
     if ($msbuildExe -and (Test-Path $msbuildExe)) {
         $_ = WriteMessage "Found `"$msbuildExe`""
         return $msbuildExe
