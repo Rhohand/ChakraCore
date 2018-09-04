@@ -13,12 +13,22 @@ function UseValueOrDefault() {
 }
 
 function GetGitPath() {
-    $gitExe = "git.exe"
+    $gitTemplate = "{0}\{1}\bin\git.exe"
+    
+    $product = "git"
 
+    $gitExe = "git.exe"
     if (!(Get-Command $gitExe -ErrorAction SilentlyContinue)) {
-        $gitExe = "C:\1image\Git\bin\git.exe"
-        if (!(Test-Path $gitExe)) {
-            throw "git.exe not found in path -- aborting."
+        $gitExe = $gitTemplate -f "C:\1image", $product
+        if (!(Test-Path $gitExe  -ErrorAction SilentlyContinue)) {
+            $gitExe = $gitTemplate -f "${Env:ProgramFiles}", $product
+            if (!(Test-Path $gitExe  -ErrorAction SilentlyContinue)) {
+                $gitExe = $gitTemplate -f "${Env:ProgramFiles(x86)}", $product
+                if (!(Test-Path $gitExe  -ErrorAction SilentlyContinue)) {
+
+                    throw "git.exe not found in path -- aborting."
+                }
+            }
         }
     }
 
