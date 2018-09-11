@@ -12,6 +12,69 @@ function UseValueOrDefault() {
     return ""
 }
 
+
+function RunShCommand() {
+    param(
+        [Parameter(Mandatory=$true,Position=1)]
+        $command
+    )
+    $shExe = GetShPath
+
+    if([string]::IsNullOrWhiteSpace($shExe)) {
+        throw "Sh not found"
+    }
+    & "$shExe" --login -i -c "$command"
+}
+
+function RunShFile() {
+    param(
+        [Parameter(Mandatory=$true,Position=1)]
+        $file,
+        [Bool]$convertFromWindowsPath = $true
+    )
+    $shExe = GetShPath
+
+    $filePath = $file
+    if($convertFromWindowsPath) { 
+        $filePath = $file.Replace('\', '/')
+        if($filePath.Contains(":")) {
+            $filePath.Replace(":", "")
+        }
+        if(!($filePath.StartsWith("/"))) {
+            $filePath = "/$filePath"
+        }
+    }
+
+    if([string]::IsNullOrWhiteSpace($shExe)) {
+        throw "Sh not found"
+    }
+    & "$shExe" --login -i -c "$command"
+}
+
+# TODO remove duplication of code
+function GetShPath() { 
+    $shTemplate = "{0}\{1}\bin\sh.exe"
+    
+    $product = "git"
+
+    $shExe = "sh.exe"
+    if (!(Get-Command $shExe -ErrorAction SilentlyContinue)) {
+        $shExe = $shTemplate -f "C:\Program Files", $product
+        if (!(Test-Path $shExe  -ErrorAction SilentlyContinue)) {
+            $shExe = $shTemplate -f "${Env:ProgramFiles}", $product
+            if (!(Test-Path $shExe  -ErrorAction SilentlyContinue)) {
+                $shExe = $shTemplate -f "${Env:ProgramFiles(x86)}", $product
+                if (!(Test-Path $shExe  -ErrorAction SilentlyContinue)) {
+
+                    throw "sh.exe not found in path -- aborting."
+                }
+            }
+        }
+    }
+
+    return $shExe
+}
+
 function GetGitPath() {
     $gitTemplate = "{0}\{1}\bin\git.exe"
     
@@ -19,7 +82,7 @@ function GetGitPath() {
 
     $gitExe = "git.exe"
     if (!(Get-Command $gitExe -ErrorAction SilentlyContinue)) {
-        $gitExe = $gitTemplate -f "C:\1image", $product
+        $gitExe = $gitTemplate -f "C:\Program Files", $product
         if (!(Test-Path $gitExe  -ErrorAction SilentlyContinue)) {
             $gitExe = $gitTemplate -f "${Env:ProgramFiles}", $product
             if (!(Test-Path $gitExe  -ErrorAction SilentlyContinue)) {
